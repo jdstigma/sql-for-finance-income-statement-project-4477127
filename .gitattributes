@@ -1,0 +1,10 @@
+# Shell scripts and container config must use LF, or they break in Linux
+# containers with "bash: \r: command not found" when checked out on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+
+# The dataset dump is left byte-for-byte as-is; psql reads CRLF fine and
+# normalizing it would rewrite ~86k lines for no benefit.
+*.sql -text
