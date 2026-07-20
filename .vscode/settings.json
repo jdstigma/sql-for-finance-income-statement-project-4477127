@@ -24,7 +24,7 @@
   "sqltools.connections": [
     {
       "previewLimit": 50,
-      "server": "db",
+      "server": "localhost",
       "port": 5432,
       "driver": "PostgreSQL",
       "name": "PostgreSQL Database",

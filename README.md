@@ -21,9 +21,10 @@ To apply the same fix, change these files:
 | `.vscode/settings.json` | Replace the removed `workbench.activityBar.visible` with `workbench.activityBar.location`. |
 | `.github/workflows/main.yml` | Bump `actions/checkout@v2` → `@v4`. |
 
-> **Note:** this fork uses a bridge network, so the database is reached at host
-> `db`. After a fresh Codespace comes up, verify with:
-> `psql -h db -U postgres -d postgres -c "\dt"` — you should see `loans`,
+> **Note:** the app container shares the database container's network
+> (`network_mode: service:db`), so the database is reached at `127.0.0.1`. After a
+> fresh Codespace comes up, verify with:
+> `psql -h 127.0.0.1 -U postgres -d postgres -c "\dt"` — you should see `loans`,
 > `payments`, `purchases`, and `sales`. An already-failed Codespace will **not**
 > pick up these changes; delete it and create a new one.
 
@@ -60,4 +61,3 @@ To resolve this issue:
 
 [lil-course-url]: https://www.linkedin.com/learning/sql-for-finance-income-statement-project
 [lil-thumbnail-url]: https://media.licdn.com/dms/image/D560DAQGAS3pGv_t8BQ/learning-public-crop_675_1200/0/1704486338824?e=2147483647&v=beta&t=BE78saEottvl0JVr3UPfrcuMM8cOpxNdXV-3XE96HtY
-

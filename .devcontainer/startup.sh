@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Load the course dataset into PostgreSQL.
+# The app container shares the db container's network (network_mode: service:db),
+# so PostgreSQL is reachable on localhost.
 set -euo pipefail
 
 DUMP=".devcontainer/setup-postgresql.sql"
 export PGPASSWORD=postgres
-PSQL="psql -h db -U postgres -d postgres -v ON_ERROR_STOP=1"
+PSQL="psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1"
 
 if [ ! -f "$DUMP" ]; then
     echo "No dump found at $DUMP - nothing to load."
@@ -15,7 +17,7 @@ fi
 # resume can still bring this script up before the DB is answering. Retry.
 echo "Waiting for PostgreSQL to accept connections..."
 for i in $(seq 1 30); do
-    if pg_isready -h db -U postgres -d postgres -q; then
+    if pg_isready -h 127.0.0.1 -U postgres -d postgres -q; then
         echo "PostgreSQL is ready."
         break
     fi
