@@ -1,3 +1,5 @@
+DROP MATERIALIZED VIEW IF EXISTS account_accounts_receivable;
+
 Create materialized view account_accounts_receivable as
 SELECT date_part ('year', payment_at) as period_year,
   'Accounts Receivable' as account,

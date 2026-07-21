@@ -47,3 +47,23 @@ else
     $PSQL -q -f "$CALENDAR"
     echo "Calendar table loaded."
 fi
+
+# Coursework queries, run in order once the data + calendar are in place. The two
+# CREATE MATERIALIZED VIEW files begin with DROP ... IF EXISTS, so this is safe to
+# re-run. Result rows are suppressed to keep the startup log readable; ON_ERROR_STOP
+# means a failing query aborts startup and surfaces which file broke.
+QUERIES=(
+    "queries/Cash Account.sql"
+    "queries/account_accounts_receivable.sql"
+    "queries/depreciation_dates.sql"
+)
+echo "Running coursework queries..."
+for q in "${QUERIES[@]}"; do
+    if [ -f "$q" ]; then
+        echo "  - $q"
+        $PSQL -q -f "$q" > /dev/null
+    else
+        echo "  - $q (missing, skipped)"
+    fi
+done
+echo "Coursework queries complete."

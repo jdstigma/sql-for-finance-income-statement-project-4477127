@@ -1,3 +1,5 @@
+DROP MATERIALIZED VIEW IF EXISTS account_cash;
+
 create materialized view account_cash as with purchase_dates as (
   select case
       when payment_method = 'cash' then payment_at
