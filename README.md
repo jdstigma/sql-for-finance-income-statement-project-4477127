@@ -46,6 +46,20 @@ psql -h 127.0.0.1 -U postgres -d postgres -c "select count(*) from calendar;"
 
 which should return **18263** rows (2000-01-01 through 2049-12-31).
 
+The script also creates **`calendar_month`**, a view exposing one row per month
+(600 rows) for period schedules like depreciation — cross join it directly
+instead of filtering the daily table. For example, a 10-year monthly depreciation
+schedule for equipment purchases is just:
+
+```sql
+SELECT p.id, p.payment_date, c.calendar_at AS depreciation_month
+FROM   calendar_month c
+CROSS JOIN payments p
+WHERE  p.payment_type = 'equipment'
+  AND  c.calendar_at >= p.payment_date
+  AND  c.calendar_at <= p.payment_date + interval '10 years';
+```
+
 If you ever need to (re)build it by hand — e.g. in a Codespace created before the
 auto-load was added — run it directly; it drops and rebuilds the table, so it's
 safe to re-run:

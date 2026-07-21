@@ -1,10 +1,18 @@
 -- ============================================================================
--- Calendar / Date dimension table  (PostgreSQL)
+-- Calendar / Date dimension  (PostgreSQL)
 -- Range: 2000-01-01 through 2049-12-31  (50-year period)
 -- Date column: calendar_at
--- Re-runnable: drops and rebuilds the table each time.
+--
+-- Builds two objects:
+--   * calendar        - daily grain, one row per day (for exact-date joins to
+--                        payment_date, loan_at, sale_day, etc.)
+--   * calendar_month  - VIEW, one row per month (the 1st), for period schedules
+--                        like depreciation - cross join it directly, no filter.
+-- Re-runnable: drops and rebuilds each time.
 -- ============================================================================
 
+-- Drop the view first: it depends on calendar, so it would block DROP TABLE.
+DROP VIEW  IF EXISTS calendar_month;
 DROP TABLE IF EXISTS calendar;
 
 CREATE TABLE calendar (
@@ -63,8 +71,22 @@ FROM generate_series(
 -- Helpful secondary index for range scans / joins on the actual date.
 CREATE INDEX ix_calendar_calendar_at ON calendar (calendar_at);
 
--- Quick sanity check (18263 rows: 50 years incl. 13 leap years 2000-2048):
--- SELECT count(*) AS row_count,
---        min(calendar_at) AS from_date,
---        max(calendar_at) AS to_date
--- FROM calendar;
+-- Monthly-grain companion: one row per month (the 1st of each month), 600 rows
+-- over the 50-year span. Use this for period schedules so you don't have to
+-- filter the daily table. Example - 10-year monthly depreciation of equipment:
+--
+--   SELECT p.id, p.payment_date, c.calendar_at AS depreciation_month
+--   FROM   calendar_month c
+--   CROSS JOIN payments p
+--   WHERE  p.payment_type = 'equipment'
+--     AND  c.calendar_at >= p.payment_date
+--     AND  c.calendar_at <= p.payment_date + interval '10 years';
+--
+CREATE VIEW calendar_month AS
+SELECT *
+FROM calendar
+WHERE day_of_month = 1;
+
+-- Quick sanity checks:
+--   SELECT count(*) FROM calendar;        -- 18263 daily rows (2000-2049)
+--   SELECT count(*) FROM calendar_month;  -- 600 monthly rows
