@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
-# Load the course dataset into PostgreSQL.
+# Load the course dataset (and calendar dimension) into PostgreSQL.
 # The app container shares the db container's network (network_mode: service:db),
 # so PostgreSQL is reachable on localhost.
 set -euo pipefail
 
 DUMP=".devcontainer/setup-postgresql.sql"
+CALENDAR="calendar.sql"
 export PGPASSWORD=postgres
 PSQL="psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1"
-
-if [ ! -f "$DUMP" ]; then
-    echo "No dump found at $DUMP - nothing to load."
-    exit 0
-fi
 
 # depends_on/service_healthy covers container start ordering, but a Codespace
 # resume can still bring this script up before the DB is answering. Retry.
@@ -28,13 +24,26 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# The dump has no DROP TABLE guards, so a second run would fail with
-# "relation already exists". Skip if the data is already loaded.
-if $PSQL -tAc "SELECT to_regclass('public.payments')" | grep -q payments; then
-    echo "Dataset already loaded - skipping."
-    exit 0
+# Base dataset. The dump has no DROP TABLE guards, so a second run would fail
+# with "relation already exists" - skip if it's already loaded.
+if [ ! -f "$DUMP" ]; then
+    echo "No base dump found at $DUMP - skipping base load."
+elif $PSQL -tAc "SELECT to_regclass('public.payments')" | grep -q payments; then
+    echo "Base dataset already loaded - skipping."
+else
+    echo "Loading base dataset..."
+    $PSQL -q -f "$DUMP"
+    echo "Base dataset loaded: loans, payments, purchases, sales."
 fi
 
-echo "Loading dataset..."
-$PSQL -q -f "$DUMP"
-echo "Dataset loaded: loans, payments, purchases, sales."
+# Calendar / date dimension. calendar.sql is idempotent on its own (it drops and
+# recreates), but guard on the table so a resume doesn't rebuild it needlessly.
+if [ ! -f "$CALENDAR" ]; then
+    echo "No calendar script found at $CALENDAR - skipping calendar load."
+elif $PSQL -tAc "SELECT to_regclass('public.calendar')" | grep -q calendar; then
+    echo "Calendar table already present - skipping."
+else
+    echo "Loading calendar dimension..."
+    $PSQL -q -f "$CALENDAR"
+    echo "Calendar table loaded."
+fi
