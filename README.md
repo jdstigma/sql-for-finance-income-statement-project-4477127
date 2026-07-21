@@ -28,6 +28,29 @@ To apply the same fix, change these files:
 > `payments`, `purchases`, and `sales`. An already-failed Codespace will **not**
 > pick up these changes; delete it and create a new one.
 
+## Calendar / date dimension
+
+The base dataset doesn't ship a date table, so this repo adds **`calendar.sql`**.
+It builds a re-runnable `calendar` table spanning **2000–2049** (50 years), keyed
+by `date_key` (`YYYYMMDD` integer) with a `calendar_at` date column plus year,
+quarter, month, ISO week, weekday, weekend, and end-of-month fields — ready to
+join against `loan_at`, `payment_date`, `sale_day`, and so on.
+
+Run it once, after the base data has loaded:
+
+```bash
+psql -h 127.0.0.1 -U postgres -d postgres -f calendar.sql
+```
+
+The script drops and rebuilds the table, so it's safe to re-run. Verify with:
+
+```bash
+psql -h 127.0.0.1 -U postgres -d postgres -c "select count(*) from calendar;"
+```
+
+which should return **18263** rows (2000-01-01 through 2049-12-31). To use a
+different window, edit the two dates in the `generate_series(...)` call.
+
 ---
 
 # SQL for Finance: Income Statement Project
