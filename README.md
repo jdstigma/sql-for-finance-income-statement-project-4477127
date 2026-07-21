@@ -30,26 +30,37 @@ To apply the same fix, change these files:
 
 ## Calendar / date dimension
 
-The base dataset doesn't ship a date table, so this repo adds **`calendar.sql`**.
-It builds a re-runnable `calendar` table spanning **2000–2049** (50 years), keyed
-by `date_key` (`YYYYMMDD` integer) with a `calendar_at` date column plus year,
-quarter, month, ISO week, weekday, weekend, and end-of-month fields — ready to
-join against `loan_at`, `payment_date`, `sale_day`, and so on.
+The base dataset doesn't ship a date table, so this repo adds **`calendar.sql`**
+at the repo root. It builds a `calendar` table spanning **2000–2049** (50 years),
+keyed by `date_key` (`YYYYMMDD` integer) with a `calendar_at` date column plus
+year, quarter, month, ISO week, weekday, weekend, and end-of-month fields — ready
+to join against `loan_at`, `payment_date`, `sale_day`, and so on.
 
-Run it once, after the base data has loaded:
-
-```bash
-psql -h 127.0.0.1 -U postgres -d postgres -f calendar.sql
-```
-
-The script drops and rebuilds the table, so it's safe to re-run. Verify with:
+**This loads automatically.** `startup.sh` runs `calendar.sql` after the base
+data on Codespace creation, so a fresh Codespace comes up with the `calendar`
+table already built. Verify with:
 
 ```bash
 psql -h 127.0.0.1 -U postgres -d postgres -c "select count(*) from calendar;"
 ```
 
-which should return **18263** rows (2000-01-01 through 2049-12-31). To use a
-different window, edit the two dates in the `generate_series(...)` call.
+which should return **18263** rows (2000-01-01 through 2049-12-31).
+
+If you ever need to (re)build it by hand — e.g. in a Codespace created before the
+auto-load was added — run it directly; it drops and rebuilds the table, so it's
+safe to re-run:
+
+```bash
+psql -h 127.0.0.1 -U postgres -d postgres -f calendar.sql
+```
+
+To use a different window, edit the two dates in the `generate_series(...)` call.
+
+## Query scripts
+
+Standalone SQL that isn't part of building the container or loading data lives in
+**`queries/`** (course exercises, ad-hoc analysis, etc.). Nothing there is run by
+the devcontainer, so add or remove files freely.
 
 ---
 
